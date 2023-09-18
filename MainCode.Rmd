@@ -15,16 +15,58 @@ This is an R Markdown document. Markdown is a simple formatting syntax for autho
 
 When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r}
+library(tidyverse)
+library(vroom)
 ```
+
 
 ## Including Plots
 
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-plot(pressure)
+data <- vroom("Data/surgery_times.csv")
+data
+
+# Adding new variable depicting hour since begging of night shift
+data<-data %>%
+  mutate(hours_since_6pm = ifelse(hour <= 18, hour + 6, hour - 18))
+
+# Calculating average of the variable "hours_since_6pm" in dataset
+avg_obs_time <- sum(data$hours_since_6pm)/nrow(data) 
+avg_obs_time
+
+
+# plotting a density plot
+data %>%
+  ggplot(aes(x = hours_since_6pm, fill = hospital)) +
+  geom_density(alpha = 0.5)
+```
+
+```{r}
+
+# Another way to visualize data
+
+#filtering data into hospital a and hospital b
+data_a<-data%>%
+  filter(hospital == "A")
+
+data_b <- data%>%
+  filter(hospital == "B")
+
+#plotting the two data sets on a circular histogram
+
+ggplot(data = data_a, aes(x = hour)) + geom_histogram(breaks = seq(0, 
+  24), width = 2, fill = "red", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
+  scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+  scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+
+ggplot(data = data_b, aes(x = hour)) + geom_histogram(breaks = seq(0, 
+  24), width = 2, fill = "blue", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
+  scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+  scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+
 ```
 
 Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
