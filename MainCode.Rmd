@@ -18,6 +18,7 @@ When you click the **Knit** button a document will be generated that includes bo
 ```{r}
 library(tidyverse)
 library(vroom)
+library(broom)
 ```
 
 
@@ -66,6 +67,15 @@ ggplot(data = data_b, aes(x = hour)) + geom_histogram(breaks = seq(0,
   24), width = 2, fill = "blue", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
   scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
+
+```
+```{r}
+data<-data%>%
+  mutate(complication_coded = ifelse(complication == "Yes", 1, 0))
+
+surgery_model <- glm(complication_coded ~ hospital + age + dow + hours_since_6pm, family = "binomial", data = data)
+
+tidy(surgery_model)
 
 ```
 
