@@ -19,6 +19,8 @@ When you click the **Knit** button a document will be generated that includes bo
 library(tidyverse)
 library(vroom)
 library(broom)
+library(stats)
+library("mgcv")
 ```
 
 
@@ -27,20 +29,20 @@ library(broom)
 You can also embed plots, for example:
 
 ```{r pressure, echo=FALSE}
-data <- vroom("Data/surgery_times.csv")
-data
+df <- vroom("Data/surgery_times.csv")
+df
 
 # Adding new variable depicting hour since begging of night shift
-data<-data %>%
+df<-df %>%
   mutate(hours_since_6pm = ifelse(hour <= 18, hour + 6, hour - 18))
 
 # Calculating average of the variable "hours_since_6pm" in dataset
-avg_obs_time <- sum(data$hours_since_6pm)/nrow(data) 
+avg_obs_time <- sum(df$hours_since_6pm)/nrow(df) 
 avg_obs_time
 
 
 # plotting a density plot
-data %>%
+df %>%
   ggplot(aes(x = hours_since_6pm, fill = hospital)) +
   geom_density(alpha = 0.5)
 ```
@@ -50,32 +52,51 @@ data %>%
 # Another way to visualize data
 
 #filtering data into hospital a and hospital b
-data_a<-data%>%
+df_a<-df%>%
   filter(hospital == "A")
 
-data_b <- data%>%
+df_b <- df%>%
   filter(hospital == "B")
 
 #plotting the two data sets on a circular histogram
 
-ggplot(data = data_a, aes(x = hour)) + geom_histogram(breaks = seq(0, 
+ggplot(data = df_a, aes(x = hour)) + geom_histogram(breaks = seq(0, 
   24), width = 2, fill = "red", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
   scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
-ggplot(data = data_b, aes(x = hour)) + geom_histogram(breaks = seq(0, 
+ggplot(data = df_b, aes(x = hour)) + geom_histogram(breaks = seq(0, 
   24), width = 2, fill = "blue", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
   scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
 ```
+
 ```{r}
-data<-data%>%
+# creating two samples with just the time variable
+hospital1_df <- df$hours_since_6pm[df$hospital == "A"]
+hospital2_df <- df$hours_since_6pm[df$hospital == "B"]
+
+#Because sample size is large, by central limit theorem we do not have to assume normality of population, we just need normality of sample means, a t test can be conducted.
+
+test_result_t <- t.test(hospital1_df, hospital2_df, var.equal = TRUE)
+test_result_t
+```
+
+
+```{r}
+# fitting a simple logistic regression model on complication
+df<-df%>%
   mutate(complication_coded = ifelse(complication == "Yes", 1, 0))
 
-surgery_model <- glm(complication_coded ~ hospital + age + dow + hours_since_6pm, family = "binomial", data = data)
+surgery_model <- glm(complication_coded ~ hospital + age + dow + hours_since_6pm, family = "binomial", data = df)
 
 tidy(surgery_model)
+
+```
+
+
+```{r}
 
 ```
 
