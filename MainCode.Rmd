@@ -2,13 +2,14 @@
 title: "STA440 Case Study 0"
 author: "Wendy Shi, Chris Liang, Ben Thorpe, Sahil Tilak"
 date: "2023-09-18"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(echo = FALSE)
 ```
-
 
 ```{r packages-download, include = FALSE}
 library(tidyverse)
@@ -18,29 +19,19 @@ library(stats)
 library("mgcv")
 ```
 
+### Characterize the time of day at which emergency room encounters occur at these two hospitals. What is the “average” time these encounters occur, and is there evidence of a difference between the two hospitals? Visualizations are especially helpful. Do not treat time of day as categorical (i.e., do not “bin” the times into things like 6-8 PM, 8 - 10 PM, etc.). The client specifically wants time treated continuously.
 
-## Including Plots
+First, we clean our data and create a new variable called `hours_since_6pm` so that time can be continuous--0 representing 6pm. We do some EDA with circular histogram plots for the distribution of time (circular since time is circular, like around a clock--the clock is military time, and this is not using hours since 6pm--just hour normally), and a density plot to visualize the distributions of time (hours since 6pm) of emergency room encounters for Hospital A and Hospital B. We find that in this sample, across both hospitals, the average time for emergencies to occur is 4.933504 hours after 6pm, so around 11pm.
 
 ```{r pressure, echo=FALSE, warning = FALSE, message = FALSE}
 df <- vroom("Data/surgery_times.csv")
-df
-
 # Adding new variable depicting hour since begging of night shift
 df<-df %>%
   mutate(hours_since_6pm = ifelse(hour <= 18, hour + 6, hour - 18))
-
 # Calculating average of the variable "hours_since_6pm" in dataset
 avg_obs_time <- sum(df$hours_since_6pm)/nrow(df) 
 avg_obs_time
-
-
-# plotting a density plot
-df %>%
-  ggplot(aes(x = hours_since_6pm, fill = hospital)) +
-  geom_density(alpha = 0.5) + 
-  theme_minimal()
 ```
-
 ```{r filtering-dataset}
 #filtering data into hospital a and hospital b
 df_a<-df%>%
@@ -49,10 +40,16 @@ df_a<-df%>%
 df_b <- df%>%
   filter(hospital == "B")
 
+#avg obs time for hospital occurrences - A and B
+mean(df_a$hours_since_6pm)
+mean(df_b$hours_since_6pm) 
+sd(df_b$hours_since_6pm) 
+sd(df_a$hours_since_6pm)
 ```
 
-``` {r circ-histogram}
+Our sample average for the time of emergency hospital occurrences for hospital A is 4.869 hours after 6pm, which is a little before 11pm, and 5.195 hours after 6pm for hospital B, which is a little after 11pm.
 
+``` {r circ-histogram}
 #plotting the two data sets on a circular histogram
 
 ggplot(data = df_a, aes(x = hour)) + 
@@ -62,7 +59,7 @@ ggplot(data = df_a, aes(x = hour)) +
   theme_minimal() + 
   scale_fill_brewer() + 
   ylab("Count") + 
-  ggtitle("Events by Time of day") + 
+  ggtitle("Events by Time of day - Hospital A") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
 ggplot(data = df_b, aes(x = hour)) + 
@@ -72,10 +69,24 @@ ggplot(data = df_b, aes(x = hour)) +
   theme_minimal() + 
   scale_fill_brewer() + 
   ylab("Count") + 
-  ggtitle("Events by Time of day") + 
+  ggtitle("Events by Time of day - Hospital B") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
 ```
+
+
+``` {r density-plot}
+# plotting a density plot
+df %>%
+  ggplot(aes(x = hours_since_6pm, fill = hospital)) +
+  geom_density(alpha = 0.5) + 
+  labs(x = "Emergency Occurrences: Hours Since 6pm",
+       y = "Density",
+       fill = "Hospital") + 
+  theme_minimal()
+```
+
+
 
 ```{r sample-means}
 # creating two samples with just the time variable
@@ -88,6 +99,10 @@ test_result_t <- t.test(hospital1_df, hospital2_df, var.equal = TRUE)
 test_result_t
 ```
 
+We ran a two-sample t-test on the mean time of hospital emergency occurrence between hospital A and hospital B. At the $\alpha$ = 0.05 significance level and our p-value being 0.01, we found sufficient evidence to reject the null hypothesis of no difference. There's sufficient evidence to suggest that average time encounter at hospital A is different from that at hospital B -- our 95% confidence interval for the average difference (in hours) is between (-0.587, -0.064). On average, we expect hospital occurrences in hospital A to occur slightly earlier than at hospital B--between 0.064 hours to 0.587 hours earlier. We're able to use a t-test here because we assume each hospital visit is independent from another hospital visit; the CLT with large enough sample size and normality of our sample means means normality assumption is satisfied; and we have equal variances between our samples.
+
+### Controlling for hospital, age of patient, and day of week, is there any evidence of differential complication outcomes depending on time of day of ER encounter?
+
 
 ```{r logistic-model}
 # fitting a simple logistic regression model on complication
@@ -99,4 +114,7 @@ surgery_model <- glm(complication_coded ~ hospital + age + dow + hours_since_6pm
 tidy(surgery_model)
 
 ```
+
+Our model is a logistic regression model with complication outcome as the binary response variable (Yes = 1, No = 0). At the $\alpha$ = 0.05 level, there is statistically significant evidence of differential complication outcomes depending on the time of day of an ER encounter when holding hospital, age of patient, and day of week constant. The p-value of our time of day variable (`hours_since_6pm`) is around 0.001, which is less than 0.05, which suggests that there is a statistically significant relationship between time of day of ER visit and complication outcome when controlling for the aforementioned variables. For each one hour increase in time since 6pm, the log-odds of a complication are expected to increase by 0.0414 (the odds of complication increase by ~1.042; there are higher odds of complication). 
+
 
