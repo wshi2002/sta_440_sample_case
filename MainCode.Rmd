@@ -118,4 +118,11 @@ tidy(surgery_model)
 
 Our model is a logistic regression model with complication outcome as the binary response variable (Yes = 1, No = 0). At the $\alpha$ = 0.05 level, there is statistically significant evidence of differential complication outcomes depending on the time of day of an ER encounter when holding hospital, age of patient, and day of week constant. The p-value of our time of day variable (`hours_since_6pm`) is around 0.001, which is less than 0.05, which suggests that there is a statistically significant relationship between time of day of ER visit and complication outcome when controlling for the aforementioned variables. For each one hour increase in time since 6pm, the log-odds of a complication are expected to increase by 0.0414 (the odds of complication increase by ~1.042; there are higher odds of complication). 
 
+```{r logit, echo = false}
+library(Stat2Data)
+
+emplogitplot1(complication_coded ~ hours_since_6pm, data = df, 
+              ngroups = 20)
+```
+
 
