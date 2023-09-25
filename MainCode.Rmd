@@ -1,6 +1,6 @@
 ---
-title: "MainCode"
-author: "Wendy"
+title: "STA440 Case Study 0"
+author: "Wendy Shi, Chris Liang, Ben Thorpe, Sahil Tilak"
 date: "2023-09-18"
 output: html_document
 ---
@@ -9,13 +9,8 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
-
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-```{r}
+```{r packages-download, include = FALSE}
 library(tidyverse)
 library(vroom)
 library(broom)
@@ -26,9 +21,7 @@ library("mgcv")
 
 ## Including Plots
 
-You can also embed plots, for example:
-
-```{r pressure, echo=FALSE}
+```{r pressure, echo=FALSE, warning = FALSE, message = FALSE}
 df <- vroom("Data/surgery_times.csv")
 df
 
@@ -44,13 +37,11 @@ avg_obs_time
 # plotting a density plot
 df %>%
   ggplot(aes(x = hours_since_6pm, fill = hospital)) +
-  geom_density(alpha = 0.5)
+  geom_density(alpha = 0.5) + 
+  theme_minimal()
 ```
 
-```{r}
-
-# Another way to visualize data
-
+```{r filtering-dataset}
 #filtering data into hospital a and hospital b
 df_a<-df%>%
   filter(hospital == "A")
@@ -58,21 +49,35 @@ df_a<-df%>%
 df_b <- df%>%
   filter(hospital == "B")
 
+```
+
+``` {r circ-histogram}
+
 #plotting the two data sets on a circular histogram
 
-ggplot(data = df_a, aes(x = hour)) + geom_histogram(breaks = seq(0, 
-  24), width = 2, fill = "red", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
-  scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+ggplot(data = df_a, aes(x = hour)) + 
+  geom_histogram(breaks = seq(0, 
+  24), width = 2, fill = "red", color = "black", alpha = 0.5) +
+  coord_polar(start = 0) + 
+  theme_minimal() + 
+  scale_fill_brewer() + 
+  ylab("Count") + 
+  ggtitle("Events by Time of day") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
-ggplot(data = df_b, aes(x = hour)) + geom_histogram(breaks = seq(0, 
-  24), width = 2, fill = "blue", color = "black", alpha = 0.5) + coord_polar(start = 0) + theme_minimal() + 
-  scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+ggplot(data = df_b, aes(x = hour)) + 
+  geom_histogram(breaks = seq(0, 
+  24), width = 2, fill = "blue", color = "black", alpha = 0.5) +
+  coord_polar(start = 0) + 
+  theme_minimal() + 
+  scale_fill_brewer() + 
+  ylab("Count") + 
+  ggtitle("Events by Time of day") + 
   scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0,24))
 
 ```
 
-```{r}
+```{r sample-means}
 # creating two samples with just the time variable
 hospital1_df <- df$hours_since_6pm[df$hospital == "A"]
 hospital2_df <- df$hours_since_6pm[df$hospital == "B"]
@@ -84,7 +89,7 @@ test_result_t
 ```
 
 
-```{r}
+```{r logistic-model}
 # fitting a simple logistic regression model on complication
 df<-df%>%
   mutate(complication_coded = ifelse(complication == "Yes", 1, 0))
@@ -95,9 +100,3 @@ tidy(surgery_model)
 
 ```
 
-
-```{r}
-
-```
-
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
