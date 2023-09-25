@@ -82,7 +82,7 @@ df %>%
   geom_density(alpha = 0.5) + 
   labs(x = "Emergency Occurrences: Hours Since 6pm",
        y = "Density",
-       title = "Density Plots of Emergency Occurrences"
+       title = "Density Plots of Emergency Occurrences",
        fill = "Hospital") + 
   theme_minimal()
 ```
